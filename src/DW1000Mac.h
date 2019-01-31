@@ -18,10 +18,38 @@
  * Arduino global library (header file) working with the DW1000 library
  * for the Decawave DW1000 UWB transceiver IC. This class has the purpose
  * to generate the mac layer
- * 
+ *
  * @todo everything, this class is only a prototype
  */
 
+ // FF FF as dest Address is BCAST
+
+ // ### Blink Frame Structure ### //
+ // ## 0  |  1   |  2-9   | 10-11
+ // ## FC | Seq# | SrcAdd | AddChk
+ // # Length = 12 Bytes
+ // Src Address is 8 bytes (reversed full)
+ // Address Check is 2 bytes (reversed short)
+ // generateBlinkFrame(byte frame[], byte sourceAddress[], byte sourceShortAddress[]);
+
+ // ### Short Mac Frame Structure ### //
+ // ## 0  |  1   |  2   |   3-4  |  5-6   |  7-8
+ // ## FC | FC_2 | Seq# | PAN ID | DstAdd | SrcAdd
+ // # Length = 9 Bytes
+ // Src and Dest Addresses are 2 bytes (reversed short)
+ // Pan ID is set to 0xDECA (Hardcoded) TODO fix this
+ // generateShortMACFrame(byte frame[], byte sourceShortAddress[], byte destinationShortAddress[]);
+
+ // ### Long Mac Frame Structure ### //
+ // ## 0  |  1   |  2   |   3-4  |  5-12   |  13-14
+ // ## FC | FC_2 | Seq# | PAN ID | DstAdd  | SrcAdd
+ // # Length = 15 Bytes
+ // Dest Addresses is 8 bytes (reversed full)
+ // Src Addresses is 2 bytes (reversed short)
+ // Pan ID is set to 0xDECA (Hardcoded) TODO fix this
+ // generateLongMACFrame(byte frame[], byte sourceShortAddress[], byte destinationAddress[]);
+
+// Frame Control Flags
 #define FC_1 0x41
 #define FC_1_BLINK 0xC5
 #define FC_2 0x8C
@@ -38,7 +66,7 @@
 #define _DW1000MAC_H_INCLUDED
 
 #include <Arduino.h>
-#include "DW1000Device.h" 
+#include "DW1000Device.h"
 
 class DW1000Device;
 
@@ -48,43 +76,44 @@ public:
 	DW1000Mac(DW1000Device* parent);
 	DW1000Mac();
 	~DW1000Mac();
-	
-	
+
+
 	//setters
 	void setDestinationAddress(byte* destinationAddress);
 	void setDestinationAddressShort(byte* shortDestinationAddress);
 	void setSourceAddress(byte* sourceAddress);
 	void setSourceAddressShort(byte* shortSourceAddress);
-	
-	
+
+
 	//for poll message we use just 2 bytes address
 	//total=12 bytes
 	void generateBlinkFrame(byte frame[], byte sourceAddress[], byte sourceShortAddress[]);
-	
+
 	//the short fram usually for Resp, Final, or Report
 	//2 bytes for Desination Address and 2 bytes for Source Address
 	//total=9 bytes
 	void generateShortMACFrame(byte frame[], byte sourceShortAddress[], byte destinationShortAddress[]);
-	
+
 	//the long frame for Ranging init
 	//8 bytes for Destination Address and 2 bytes for Source Address
 	//total of
 	void generateLongMACFrame(byte frame[], byte sourceShortAddress[], byte destinationAddress[]);
-	
+
 	//in order to decode the frame and save source Address!
 	void decodeBlinkFrame(byte frame[], byte address[], byte shortAddress[]);
 	void decodeShortMACFrame(byte frame[], byte address[]);
+	void decodeShortMACFrame(byte frame[], byte destAddr[], byte srcAddr[]);
 	void decodeLongMACFrame(byte frame[], byte address[]);
-	
+	void decodeLongMACFrame(byte frame[], byte destAddr[], byte srcAddr[]);
+
 	void incrementSeqNumber();
 
 
 private:
 	uint8_t _seqNumber = 0;
 	void reverseArray(byte to[], byte from[], int16_t size);
-	
+
 };
 
 
 #endif
-

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file DW1000Ranging.h
+ * @file AsymmetricRanging.h
  * Arduino global library (header file) working with the DW1000 library
  * for the Decawave DW1000 UWB transceiver IC.
  *
@@ -58,6 +58,7 @@
 //sketch type (anchor or tag)
 #define TAG 0
 #define ANCHOR 1
+#define NODE 2
 
 //default timer delay
 #define DEFAULT_TIMER_DELAY 80
@@ -68,7 +69,7 @@
 #endif
 
 
-class DW1000RangingClass {
+class AsymmetricRangingClass {
 public:
 	//variables
 	// data buffer
@@ -78,6 +79,8 @@ public:
 	static void    initCommunication(uint8_t myRST = DEFAULT_RST_PIN, uint8_t mySS = DEFAULT_SPI_SS_PIN, uint8_t myIRQ = 2);
 	static void    configureNetwork(uint16_t deviceAddress, uint16_t networkId, const byte mode[]);
 	static void    generalStart();
+
+	static void    startNode(char address[], const byte mode[], const bool randomShortAddress = true);
 	static void    startAsAnchor(char address[], const byte mode[], const bool randomShortAddress = true);
 	static void    startAsTag(char address[], const byte mode[], const bool randomShortAddress = true);
 	static boolean addNetworkDevices(DW1000Device* device, boolean shortAddress);
@@ -212,4 +215,4 @@ private:
 	static float filterValue(float value, float previousValue, uint16_t numberOfElements);
 };
 
-extern DW1000RangingClass DW1000Ranging;
+extern AsymmetricRangingClass AsymmetricRanging;
