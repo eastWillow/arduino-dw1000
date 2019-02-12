@@ -157,6 +157,9 @@ public:
 	*/
 
 
+	// CUSTOM
+	static void getTransmitPower(char msgBuffer[]);
+
 	static void setNetworkId(uint16_t val);
 
 	/**
@@ -242,6 +245,7 @@ public:
 
 	/* transmit and receive configuration. */
 	static DW1000Time   setDelay(const DW1000Time& delay);
+	static DW1000Time   setDelayFromRx(const DW1000Time& delay);
 	static void         receivePermanently(boolean val);
 	static void         setData(byte data[], uint16_t n);
 	static void         setData(const String& data);
@@ -340,7 +344,8 @@ public:
 	static void getPrettyBytes(byte cmd, uint16_t offset, char msgBuffer[], uint16_t n);
 	static void getPrettyBytes(byte data[], char msgBuffer[], uint16_t n);
 	static void getPrettyHex(byte data[], char msgBuffer[], uint16_t n);
-	static void printPrettyHex(byte data[], uint16_t n);
+	static void printPrettyHex(byte data[], uint16_t n, boolean = true);
+	static void printPrettyBin(byte data[], uint16_t n, boolean = true);
 
 	//convert from char to 4 bits (hexadecimal)
 	static uint8_t nibbleFromChar(char c);
@@ -413,6 +418,8 @@ public:
 	static constexpr byte MODE_SHORTDATA_FAST_ACCURACY[] = {TRX_RATE_6800KBPS, TX_PULSE_FREQ_64MHZ, TX_PREAMBLE_LEN_128};
 	static constexpr byte MODE_LONGDATA_FAST_ACCURACY[]  = {TRX_RATE_6800KBPS, TX_PULSE_FREQ_64MHZ, TX_PREAMBLE_LEN_1024};
 	static constexpr byte MODE_LONGDATA_RANGE_ACCURACY[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_64MHZ, TX_PREAMBLE_LEN_2048};
+
+	static constexpr byte MODE_MAGIC[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_1024};
 
 //private:
 	/* chip select, reset and interrupt pins. */
@@ -492,6 +499,7 @@ public:
 	/* device status flags */
 	static boolean isReceiveTimestampAvailable();
 	static boolean isTransmitDone();
+	static boolean isLate();
 	static boolean isReceiveDone();
 	static boolean isReceiveFailed();
 	static boolean isReceiveTimeout();
@@ -500,6 +508,9 @@ public:
 	/* interrupt state handling */
 	static void clearInterrupts();
 	static void clearAllStatus();
+
+  static void setRecieveWaitTimeoutEnable(boolean val);
+
 	static void clearReceiveStatus();
 	static void clearReceiveTimestampAvailableStatus();
 	static void clearTransmitStatus();

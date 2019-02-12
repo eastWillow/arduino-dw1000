@@ -111,7 +111,7 @@ public:
 
 	static void attachInactiveDevice(void (* handleInactiveDevice)(DW1000Device*)) { _handleInactiveDevice = handleInactiveDevice; };
 
-	static void attachUnknownMessage(void (* handleUnknownMessage)(DW1000Device*)) { _handleUnknownMessage = handleUnknownMessage; };
+	static void attachUnknownMessage(void (* handleUnknownMessage)(byte(*)[90], uint16_t)) { _handleUnknownMessage = handleUnknownMessage; };
 
 	static void attachSafeTransmit(void (* handleSafeTransmit)(DW1000Device*)) { _handleSafeTransmit = handleSafeTransmit; };
 
@@ -120,6 +120,7 @@ public:
 
 	//FOR DEBUGGING
 	static void visualizeDatas(byte datas[]);
+	static uint16_t     xmitNumber;
 
 
 private:

@@ -64,6 +64,7 @@
 #define PHR_MODE_SUB 16
 #define LEN_PHR_MODE_SUB 2
 #define RXM110K_BIT 22
+#define RXWTOE 28
 
 // device control register
 #define SYS_CTRL 0x0D
@@ -97,6 +98,7 @@
 #define LDEERR_BIT 18
 #define RFPLL_LL_BIT 24
 #define CLKPLL_LL_BIT 25
+#define HPDWARN 27
 
 // system event mask register
 // NOTE: uses the bit definitions of SYS_STATUS (below 32)

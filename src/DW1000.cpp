@@ -59,7 +59,7 @@ byte       DW1000Class::_pulseFrequency      = TX_PULSE_FREQ_16MHZ;
 byte       DW1000Class::_dataRate            = TRX_RATE_6800KBPS;
 byte       DW1000Class::_preambleLength      = TX_PREAMBLE_LEN_128;
 byte       DW1000Class::_preambleCode        = PREAMBLE_CODE_16MHZ_4;
-byte       DW1000Class::_channel             = CHANNEL_5;
+byte       DW1000Class::_channel             = CHANNEL_3; // CHANNEL_5
 DW1000Time DW1000Class::_antennaDelay;
 boolean    DW1000Class::_smartPower          = false;
 
@@ -78,6 +78,9 @@ constexpr byte DW1000Class::MODE_LONGDATA_FAST_LOWPOWER[];
 constexpr byte DW1000Class::MODE_SHORTDATA_FAST_ACCURACY[];
 constexpr byte DW1000Class::MODE_LONGDATA_FAST_ACCURACY[];
 constexpr byte DW1000Class::MODE_LONGDATA_RANGE_ACCURACY[];
+
+constexpr byte DW1000Class::MODE_MAGIC[];
+
 /*
 const byte DW1000Class::MODE_LONGDATA_RANGE_LOWPOWER[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_2048};
 const byte DW1000Class::MODE_SHORTDATA_FAST_LOWPOWER[] = {TRX_RATE_6800KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_128};
@@ -336,7 +339,7 @@ void DW1000Class::enableMode(const byte mode[]) {
 	setPreambleLength(mode[2]);
 	// TODO add channel and code to mode tuples
 	// TODO add channel and code settings with checks (see Table 58)
-	setChannel(CHANNEL_5);
+	setChannel(CHANNEL_3);
 	if(mode[1] == TX_PULSE_FREQ_16MHZ) {
 		setPreambleCode(PREAMBLE_CODE_16MHZ_4);
 	} else {
@@ -681,6 +684,10 @@ void DW1000Class::tune() {
 	} else {
 		// TODO proper error/warning handling
 	}
+
+  writeValueToBytes(txpower, 0x1F1F1F1F, LEN_TX_POWER);
+
+
 	// Crystal calibration from OTP (if available)
 	byte buf_otp[4];
 	readBytesOTP(0x01E, buf_otp);
@@ -746,10 +753,10 @@ void DW1000Class::handleInterrupt() {
 	} else if(isReceiveDone() && _handleReceived != 0) {
 		(*_handleReceived)();
 		clearReceiveStatus();
-		if(_permanentReceive) {
-			newReceive();
-			startReceive();
-		}
+		// if(_permanentReceive) {
+		// 	newReceive();
+		// 	startReceive();
+		// }
 	}
 	// clear all status that is left unhandled
 	clearAllStatus();
@@ -772,6 +779,21 @@ void DW1000Class::getPrintableExtendedUniqueIdentifier(char msgBuffer[]) {
 	readBytes(EUI, NO_SUB, data, LEN_EUI);
 	sprintf(msgBuffer, "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
 					data[7], data[6], data[5], data[4], data[3], data[2], data[1], data[0]);
+}
+
+void DW1000Class::getTransmitPower(char msgBuffer[]) {
+	byte data[LEN_TX_POWER];
+	readBytes(TX_POWER, NO_SUB, data, LEN_TX_POWER);
+
+	uint16_t i, b = 0;
+	for(i = 0; i < LEN_TX_POWER; i++) {
+		byte curByte = data[i];
+		sprintf(&msgBuffer[b], "%02X",curByte);
+		b+=2;
+		if (i < LEN_TX_POWER-1)
+			msgBuffer[b++] = ':';
+	}
+	msgBuffer[b++] = '\0';
 }
 
 void DW1000Class::getPrintableNetworkIdAndShortAddress(char msgBuffer[]) {
@@ -1123,6 +1145,35 @@ DW1000Time DW1000Class::setDelay(const DW1000Time& delay) {
 	return futureTime;
 }
 
+DW1000Time DW1000Class::setDelayFromRx(const DW1000Time& delay) {
+	if(_deviceMode == TX_MODE) {
+		setBit(_sysctrl, LEN_SYS_CTRL, TXDLYS_BIT, true);
+	} else if(_deviceMode == RX_MODE) {
+		setBit(_sysctrl, LEN_SYS_CTRL, RXDLYS_BIT, true);
+	} else {
+		// in idle, ignore
+		return DW1000Time();
+	}
+	byte       delayBytes[5];
+	DW1000Time receiveTime;
+
+	getReceiveTimestamp(receiveTime);
+
+	receiveTime += delay;
+	receiveTime.getTimestamp(delayBytes);
+	delayBytes[0] = 0;
+	delayBytes[1] &= 0xFE;
+	writeBytes(DX_TIME, NO_SUB, delayBytes, LEN_DX_TIME);
+	// adjust expected time with configured antenna delay
+	receiveTime.setTimestamp(delayBytes);
+
+	receiveTime += _antennaDelay;
+
+	return receiveTime;
+}
+
+
+
 
 void DW1000Class::setDataRate(byte rate) {
 	rate &= 0x03;
@@ -1199,6 +1250,7 @@ void DW1000Class::receivePermanently(boolean val) {
 	_permanentReceive = val;
 	if(val) {
 		// in case permanent, also reenable receiver once failed
+		setRecieveWaitTimeoutEnable(false);
 		setReceiverAutoReenable(true);
 		writeSystemConfigurationRegister();
 	}
@@ -1330,8 +1382,9 @@ void DW1000Class::getReceiveTimestamp(DW1000Time& time) {
 	byte rxTimeBytes[LEN_RX_STAMP];
 	readBytes(RX_TIME, RX_STAMP_SUB, rxTimeBytes, LEN_RX_STAMP);
 	time.setTimestamp(rxTimeBytes);
+
 	// correct timestamp (i.e. consider range bias)
-	correctTimestamp(time);
+	// correctTimestamp(time);
 }
 
 // TODO check function, different type violations between byte and int
@@ -1414,6 +1467,10 @@ boolean DW1000Class::isReceiveTimestampAvailable() {
 	return getBit(_sysstatus, LEN_SYS_STATUS, LDEDONE_BIT);
 }
 
+boolean DW1000Class::isLate() {
+  return getBit(_sysstatus, LEN_SYS_STATUS, HPDWARN);
+}
+
 boolean DW1000Class::isReceiveDone() {
 	if(_frameCheck) {
 		return getBit(_sysstatus, LEN_SYS_STATUS, RXFCG_BIT);
@@ -1457,6 +1514,11 @@ void DW1000Class::clearAllStatus() {
 void DW1000Class::clearReceiveTimestampAvailableStatus() {
 	setBit(_sysstatus, LEN_SYS_STATUS, LDEDONE_BIT, true);
 	writeBytes(SYS_STATUS, NO_SUB, _sysstatus, LEN_SYS_STATUS);
+}
+
+void DW1000Class::setRecieveWaitTimeoutEnable(boolean val) {
+	setBit(_syscfg, LEN_SYS_CFG, RXWTOE, val);
+	writeBytes(SYS_CFG, NO_SUB, _syscfg, LEN_SYS_CFG);
 }
 
 void DW1000Class::clearReceiveStatus() {
@@ -1651,7 +1713,7 @@ void DW1000Class::readBytes(byte cmd, uint16_t offset, byte data[], uint16_t n) 
 	for(i = 0; i < n; i++) {
 		data[i] = SPI.transfer(JUNK); // read values
 	}
-	delayMicroseconds(5);
+	// delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
 	SPI.endTransaction();
 }
@@ -1723,7 +1785,7 @@ void DW1000Class::writeBytes(byte cmd, uint16_t offset, byte data[], uint16_t da
 	for(i = 0; i < data_size; i++) {
 		SPI.transfer(data[i]); // write values
 	}
-	delayMicroseconds(5);
+	// delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
 	SPI.endTransaction();
 }
@@ -1790,7 +1852,7 @@ void DW1000Class::getPrettyHex(byte data[], char msgBuffer[], uint16_t n) {
 	msgBuffer[b++] = '\0';
 }
 
-void DW1000Class::printPrettyHex(byte data[], uint16_t n) {
+void DW1000Class::printPrettyHex(byte data[], uint16_t n, boolean newline) {
 	uint16_t i, b = 0;
 	char msg[2];
 	for(i = 0; i < n; i++) {
@@ -1800,5 +1862,30 @@ void DW1000Class::printPrettyHex(byte data[], uint16_t n) {
 		if (i < n-1)
 			Serial.print(':');
 	}
-	Serial.println();
+	if (newline)
+		Serial.println();
+}
+
+void DW1000Class::printPrettyBin(byte data[], uint16_t n, boolean newline) {
+	uint16_t i;
+	char msg[2];
+	for(i = 0; i < n; i++) {
+		byte curByte = data[i];
+
+
+
+		for (int16_t x = 7; x >= 0; x--)
+		{
+			Serial.print(bitRead(curByte, x));
+			if (x == 4)
+				Serial.print(' ');
+		}
+
+		// sprintf(msg, "%02X",curByte);
+		// Serial.print(msg);
+		if (i < n-1)
+			Serial.print(" : ");
+	}
+	if (newline)
+		Serial.println();
 }

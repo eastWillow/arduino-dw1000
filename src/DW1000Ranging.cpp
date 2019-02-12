@@ -63,6 +63,8 @@ boolean          DW1000RangingClass::_protocolFailed = false;
 int32_t            DW1000RangingClass::timer           = 0;
 int16_t            DW1000RangingClass::counterForBlink = 0; // TODO 8 bit?
 
+uint16_t DW1000RangingClass::xmitNumber = 0;
+
 
 // data buffer
 byte          DW1000RangingClass::data[LEN_DATA];
@@ -114,6 +116,7 @@ void DW1000RangingClass::configureNetwork(uint16_t deviceAddress, uint16_t netwo
 	DW1000.setDefaults();
 	DW1000.setDeviceAddress(deviceAddress);
 	DW1000.setNetworkId(networkId);
+	// DW1000.setChannel(DW1000.CHANNEL_3);
 	DW1000.enableMode(mode);
 	DW1000.commitConfiguration();
 
@@ -420,6 +423,9 @@ void DW1000RangingClass::loop() {
 						myDistantDevice->timePollSent = timePollSent;
 					}
 				}
+
+				xmitNumber ++;
+
 			}
 			else if(messageType == RANGE) {
 				DW1000Time timeRangeSent;
