@@ -84,6 +84,7 @@ public:
 	void setSourceAddress(byte* sourceAddress);
 	void setSourceAddressShort(byte* shortSourceAddress);
 
+
 	//for poll message we use just 2 bytes address
 	//total=12 bytes
 	void generateBlinkFrame(byte frame[], byte sourceAddress[], byte sourceShortAddress[]);

@@ -86,6 +86,8 @@
 #define TXPRS_BIT 5
 #define TXPHS_BIT 6
 #define TXFRS_BIT 7
+#define RXPRD_BIT 8
+#define RXSFDD_BIT 9
 #define LDEDONE_BIT 10
 #define RXPHE_BIT 12
 #define RXDFR_BIT 13

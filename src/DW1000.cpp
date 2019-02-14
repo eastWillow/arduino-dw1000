@@ -110,6 +110,10 @@ const byte DW1000Class::BIAS_900_64[] = {147, 133, 117, 99, 75, 50, 29, 0, 24, 4
 const SPISettings DW1000Class::_slowSPI = SPISettings(2000000L, MSBFIRST, SPI_MODE0);
 const SPISettings* DW1000Class::_currentSPI = &_fastSPI;
 
+/* Message Timings */
+volatile uint32_t DW1000Class::_rxFrameTime = 0;
+volatile uint32_t DW1000Class::_txFrameTime = 0;
+
 /* ###########################################################################
  * #### Init and end #######################################################
  * ######################################################################### */
@@ -684,10 +688,6 @@ void DW1000Class::tune() {
 	} else {
 		// TODO proper error/warning handling
 	}
-
-  writeValueToBytes(txpower, 0x1F1F1F1F, LEN_TX_POWER);
-
-
 	// Crystal calibration from OTP (if available)
 	byte buf_otp[4];
 	readBytesOTP(0x01E, buf_otp);
@@ -723,12 +723,40 @@ void DW1000Class::tune() {
  * ######################################################################### */
 
 void DW1000Class::handleInterrupt() {
+
+	uint32_t now = micros();
+
+	// Serial.print('i');
+
 	// read current status and handle via callbacks
 	readSystemEventStatusRegister();
+
+	/*static boolean isRxPreambleDetected();
+		static boolean startOfRxFrame();
+		static boolean isTxPreambleSent();
+		static boolean isTxFrameSent();*/
+	if (startOfRxFrame()) {
+		_rxFrameTime = now;
+		// Serial.print('r');
+		setBit(_sysstatus, LEN_SYS_STATUS, RXSFDD_BIT, true);
+		writeBytes(SYS_STATUS, NO_SUB, _sysstatus, LEN_SYS_STATUS);
+	}
+	if (isTxFrameSent()) {
+		_txFrameTime = now;
+		// Serial.print('t');
+		setBit(_sysstatus, LEN_SYS_STATUS, TXFRB_BIT, true);
+		writeBytes(SYS_STATUS, NO_SUB, _sysstatus, LEN_SYS_STATUS);
+	}
+
 	if(isClockProblem() /* TODO and others */ && _handleError != 0) {
 		(*_handleError)();
+
+		//setBit(_sysstatus, LEN_SYS_STATUS, CLKPLL_LL_BIT, true);
+		//setBit(_sysstatus, LEN_SYS_STATUS, RFPLL_LL_BIT, true);
+		//writeBytes(SYS_STATUS, NO_SUB, _sysstatus, LEN_SYS_STATUS);
 	}
 	if(isTransmitDone() && _handleSent != 0) {
+		// Serial.print('T');
 		(*_handleSent)();
 		clearTransmitStatus();
 	}
@@ -751,12 +779,13 @@ void DW1000Class::handleInterrupt() {
 			startReceive();
 		}
 	} else if(isReceiveDone() && _handleReceived != 0) {
+		// Serial.print('R');
 		(*_handleReceived)();
 		clearReceiveStatus();
-		// if(_permanentReceive) {
-		// 	newReceive();
-		// 	startReceive();
-		// }
+		if(_permanentReceive) {
+			newReceive();
+			startReceive();
+		}
 	}
 	// clear all status that is left unhandled
 	clearAllStatus();
@@ -1037,6 +1066,22 @@ void DW1000Class::interruptOnAutomaticAcknowledgeTrigger(boolean val) {
 	setBit(_sysmask, LEN_SYS_MASK, AAT_BIT, val);
 }
 
+void DW1000Class::interruptOnRxPreambleDetect(boolean val) {
+	setBit(_sysmask, LEN_SYS_MASK, RXPRD_BIT, val);
+}
+
+void DW1000Class::interruptOnRxFrameStart(boolean val) {
+	setBit(_sysmask, LEN_SYS_MASK, RXSFDD_BIT, val);
+}
+
+void DW1000Class::interruptOnTxPreambleSent(boolean val) {
+	setBit(_sysmask, LEN_SYS_MASK, TXPRS_BIT, val);
+}
+
+void DW1000Class::interruptOnTxFrameStart(boolean val) {
+	setBit(_sysmask, LEN_SYS_MASK, TXFRB_BIT, val);
+}
+
 void DW1000Class::clearInterrupts() {
 	memset(_sysmask, 0, LEN_SYS_MASK);
 }
@@ -1103,7 +1148,8 @@ void DW1000Class::commitConfiguration() {
 	// TODO clean up code + antenna delay/calibration API
 	// TODO setter + check not larger two bytes integer
 	byte antennaDelayBytes[LEN_STAMP];
-	writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP);
+	// writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP);
+	writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP); // good? 22350
 	_antennaDelay.setTimestamp(antennaDelayBytes);
 	writeBytes(TX_ANTD, NO_SUB, antennaDelayBytes, LEN_TX_ANTD);
 	writeBytes(LDE_IF, LDE_RXANTD_SUB, antennaDelayBytes, LEN_LDE_RXANTD);
@@ -1157,9 +1203,15 @@ DW1000Time DW1000Class::setDelayFromRx(const DW1000Time& delay) {
 	byte       delayBytes[5];
 	DW1000Time receiveTime;
 
-	getReceiveTimestamp(receiveTime);
+	if (isReceiveTimestampAvailable())
+		getReceiveTimestamp(receiveTime);
+	else
+		getSystemTimestamp(receiveTime);
 
-	receiveTime += delay;
+	receiveTime = (receiveTime + delay - _antennaDelay).wrap();
+
+
+
 	receiveTime.getTimestamp(delayBytes);
 	delayBytes[0] = 0;
 	delayBytes[1] &= 0xFE;
@@ -1167,7 +1219,12 @@ DW1000Time DW1000Class::setDelayFromRx(const DW1000Time& delay) {
 	// adjust expected time with configured antenna delay
 	receiveTime.setTimestamp(delayBytes);
 
-	receiveTime += _antennaDelay;
+	// Serial.print("Sch: "); Serial.println(receiveTime.getAsNanoSeconds());
+	// Serial.print(", ant:"); Serial.println(_antennaDelay.getAsNanoSeconds());
+
+	receiveTime += _antennaDelay + _antennaDelay;
+
+
 
 	return receiveTime;
 }
@@ -1250,7 +1307,6 @@ void DW1000Class::receivePermanently(boolean val) {
 	_permanentReceive = val;
 	if(val) {
 		// in case permanent, also reenable receiver once failed
-		setRecieveWaitTimeoutEnable(false);
 		setReceiverAutoReenable(true);
 		writeSystemConfigurationRegister();
 	}
@@ -1297,6 +1353,13 @@ void DW1000Class::setDefaults() {
 		interruptOnReceiveFailed(true);
 		interruptOnReceiveTimestampAvailable(false);
 		interruptOnAutomaticAcknowledgeTrigger(true);
+
+		// Set up message timing interrupts
+		// interruptOnRxPreambleDetect(false);
+		// interruptOnTxPreambleSent(false);
+		// interruptOnRxFrameStart(false);
+		// interruptOnTxFrameStart(false);
+
 		setReceiverAutoReenable(true);
 		// default mode when powering up the chip
 		// still explicitly selected for later tuning
@@ -1382,9 +1445,8 @@ void DW1000Class::getReceiveTimestamp(DW1000Time& time) {
 	byte rxTimeBytes[LEN_RX_STAMP];
 	readBytes(RX_TIME, RX_STAMP_SUB, rxTimeBytes, LEN_RX_STAMP);
 	time.setTimestamp(rxTimeBytes);
-
 	// correct timestamp (i.e. consider range bias)
-	// correctTimestamp(time);
+	correctTimestamp(time); //MERGE NOTE saved a lot of time
 }
 
 // TODO check function, different type violations between byte and int
@@ -1463,6 +1525,22 @@ boolean DW1000Class::isTransmitDone() {
 	return getBit(_sysstatus, LEN_SYS_STATUS, TXFRS_BIT);
 }
 
+boolean DW1000Class::isRxPreambleDetected() {
+	return getBit(_sysstatus, LEN_SYS_STATUS, RXPRD_BIT);
+}
+
+boolean DW1000Class::startOfRxFrame() {
+	return getBit(_sysstatus, LEN_SYS_STATUS, RXSFDD_BIT);
+}
+
+boolean DW1000Class::isTxPreambleSent() {
+	return getBit(_sysstatus, LEN_SYS_STATUS, TXPRS_BIT);
+}
+
+boolean DW1000Class::isTxFrameSent() {
+	return getBit(_sysstatus, LEN_SYS_STATUS, TXFRB_BIT);
+}
+
 boolean DW1000Class::isReceiveTimestampAvailable() {
 	return getBit(_sysstatus, LEN_SYS_STATUS, LDEDONE_BIT);
 }
@@ -1514,11 +1592,6 @@ void DW1000Class::clearAllStatus() {
 void DW1000Class::clearReceiveTimestampAvailableStatus() {
 	setBit(_sysstatus, LEN_SYS_STATUS, LDEDONE_BIT, true);
 	writeBytes(SYS_STATUS, NO_SUB, _sysstatus, LEN_SYS_STATUS);
-}
-
-void DW1000Class::setRecieveWaitTimeoutEnable(boolean val) {
-	setBit(_syscfg, LEN_SYS_CFG, RXWTOE, val);
-	writeBytes(SYS_CFG, NO_SUB, _syscfg, LEN_SYS_CFG);
 }
 
 void DW1000Class::clearReceiveStatus() {
@@ -1713,7 +1786,7 @@ void DW1000Class::readBytes(byte cmd, uint16_t offset, byte data[], uint16_t n) 
 	for(i = 0; i < n; i++) {
 		data[i] = SPI.transfer(JUNK); // read values
 	}
-	// delayMicroseconds(5);
+	delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
 	SPI.endTransaction();
 }
@@ -1785,7 +1858,7 @@ void DW1000Class::writeBytes(byte cmd, uint16_t offset, byte data[], uint16_t da
 	for(i = 0; i < data_size; i++) {
 		SPI.transfer(data[i]); // write values
 	}
-	// delayMicroseconds(5);
+	delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
 	SPI.endTransaction();
 }

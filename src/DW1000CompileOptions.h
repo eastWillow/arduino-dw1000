@@ -16,7 +16,7 @@
  *
  * @file DW1000CompileOptions.h
  * Here are some options to optimize code and save some ram and rom
- *
+ * 
  */
 
 #ifndef DW1000COMPILEOPTIONS_H
@@ -24,10 +24,10 @@
 
 /**
  * Printable DW1000Time object costs about: rom: 490 byte ; ram: 58 byte
- * This option is needed because compiler can not optimize unused codes from inheritanced methods
+ * This option is needed because compiler can not optimize unused codes from inheritanced methods 
  * Some examples or debug code use this
  * Set false if you do not need it and have to save some space
  */
-// #define DW1000TIME_H_PRINTABLE true
+#define DW1000TIME_H_PRINTABLE true
 
 #endif // DW1000COMPILEOPTIONS_H
