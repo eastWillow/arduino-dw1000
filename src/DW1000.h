@@ -238,6 +238,10 @@ public:
 	*/
 	static void setPulseFrequency(byte freq);
 	static byte getPulseFrequency();
+
+	static void setAntennaDelay(int32_t delay);
+	static int32_t getAntennaDelay();
+
 	static void setPreambleLength(byte prealen);
 	static void setChannel(byte channel);
 	static void setPreambleCode(byte preacode);
@@ -482,6 +486,9 @@ public:
 
 	// whether RX or TX is active
 	static uint8_t _deviceMode;
+
+	// antenna delay correction value
+	static int32_t _antennaDelayValue;
 
 	// whether debounce clock is active
 	static boolean _debounceClockEnabled;

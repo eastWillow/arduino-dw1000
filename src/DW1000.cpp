@@ -67,6 +67,8 @@ boolean    DW1000Class::_frameCheck          = true;
 boolean    DW1000Class::_permanentReceive    = false;
 uint8_t    DW1000Class::_deviceMode          = IDLE_MODE; // TODO replace by enum
 
+int32_t    DW1000Class::_antennaDelayValue   = 16384;
+
 boolean    DW1000Class::_debounceClockEnabled = false;
 
 // modes of operation
@@ -1168,7 +1170,7 @@ void DW1000Class::commitConfiguration() {
 	// TODO setter + check not larger two bytes integer
 	byte antennaDelayBytes[LEN_STAMP];
 	// writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP);
-	writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP); // good? 22350
+	writeValueToBytes(antennaDelayBytes, _antennaDelayValue, LEN_STAMP);
 	_antennaDelay.setTimestamp(antennaDelayBytes);
 	writeBytes(TX_ANTD, NO_SUB, antennaDelayBytes, LEN_TX_ANTD);
 	writeBytes(LDE_IF, LDE_RXANTD_SUB, antennaDelayBytes, LEN_LDE_RXANTD);
@@ -1298,6 +1300,14 @@ void DW1000Class::setPulseFrequency(byte freq) {
 
 byte DW1000Class::getPulseFrequency() {
 	return _pulseFrequency;
+}
+
+void DW1000Class::setAntennaDelay(int32_t delay) {
+	_antennaDelayValue = delay;
+}
+
+int32_t DW1000Class::getAntennaDelay() {
+	return _antennaDelayValue;
 }
 
 void DW1000Class::setPreambleLength(byte prealen) {
