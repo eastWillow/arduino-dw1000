@@ -984,6 +984,25 @@ void DW1000Class::getTempAndVbat(float& temp, float& vbat) {
 	temp = (sar_ltemp - _tmeas23C) * 1.14f + 23.0f;
 }
 
+void DW1000Class::getTempAndVbatByte(byte& temp, byte& vbat) {
+	// follow the procedure from section 6.4 of the User Manual
+	byte step1 = 0x80; writeBytes(RF_CONF, 0x11, &step1, 1);
+	byte step2 = 0x0A; writeBytes(RF_CONF, 0x12, &step2, 1);
+	byte step3 = 0x0F; writeBytes(RF_CONF, 0x12, &step3, 1);
+	byte step4 = 0x01; writeBytes(TX_CAL, NO_SUB, &step4, 1);
+	byte step5 = 0x00; writeBytes(TX_CAL, NO_SUB, &step5, 1);
+	byte sar_lvbat = 0; readBytes(TX_CAL, 0x03, &sar_lvbat, 1);
+	byte sar_ltemp = 0; readBytes(TX_CAL, 0x04, &sar_ltemp, 1);
+
+	// calculate voltage and temperature
+	vbat = sar_lvbat - _vmeas3v3;
+	temp = sar_ltemp - _tmeas23C;
+}
+
+float DW1000Class::convertTemp(byte temp_in) {
+	return (temp_in) * 1.14f + 23.0f;
+}
+
 void DW1000Class::setEUI(char eui[]) {
 	byte eui_byte[LEN_EUI];
 	convertToByte(eui, eui_byte);
