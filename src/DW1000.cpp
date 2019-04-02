@@ -688,6 +688,11 @@ void DW1000Class::tune() {
 	} else {
 		// TODO proper error/warning handling
 	}
+
+
+	// writeValueToBytes(txpower, 0x1F1F1F1FL, LEN_TX_POWER);
+
+
 	// Crystal calibration from OTP (if available)
 	byte buf_otp[4];
 	readBytesOTP(0x01E, buf_otp);
@@ -1148,8 +1153,33 @@ void DW1000Class::commitConfiguration() {
 	// TODO clean up code + antenna delay/calibration API
 	// TODO setter + check not larger two bytes integer
 	byte antennaDelayBytes[LEN_STAMP];
-	// writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP);
-	writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP); // good? 22350
+
+	// DWM1000 Antenna: 16384
+	// Blade Antenna: 16587
+	// Large Antenna: 16525
+	// Small Antenna: 16520
+
+
+	// Target: 4.114m (Blade)
+	// 16590 -> 4.08
+	// 16587 -> 4.12 **
+	// 16580 -> 4.19
+	// 16550 -> 4.38
+	// 16535 -> 4.58
+	// 16525 -> 4.62
+
+	// Target: 4.114m (Small)
+	// 16525 -> 4.03
+	// 16520 -> 4.11 **
+
+	// Target: 4.114m (Large)
+	// 16530 -> 4.08
+	// 16525 -> 4.12 **
+	// 16500 -> 4.37
+	// 16384 -> 5.43m
+	// 15384 -> ~14.5m
+	writeValueToBytes(antennaDelayBytes, 16587, LEN_STAMP);
+	// writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP); // good? 22350
 	_antennaDelay.setTimestamp(antennaDelayBytes);
 	writeBytes(TX_ANTD, NO_SUB, antennaDelayBytes, LEN_TX_ANTD);
 	writeBytes(LDE_IF, LDE_RXANTD_SUB, antennaDelayBytes, LEN_LDE_RXANTD);
