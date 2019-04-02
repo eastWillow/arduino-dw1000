@@ -690,6 +690,11 @@ void DW1000Class::tune() {
 	} else {
 		// TODO proper error/warning handling
 	}
+
+
+	// writeValueToBytes(txpower, 0x1F1F1F1FL, LEN_TX_POWER);
+
+
 	// Crystal calibration from OTP (if available)
 	byte buf_otp[4];
 	readBytesOTP(0x01E, buf_otp);
@@ -1169,7 +1174,6 @@ void DW1000Class::commitConfiguration() {
 	// TODO clean up code + antenna delay/calibration API
 	// TODO setter + check not larger two bytes integer
 	byte antennaDelayBytes[LEN_STAMP];
-	// writeValueToBytes(antennaDelayBytes, 16384, LEN_STAMP);
 	writeValueToBytes(antennaDelayBytes, _antennaDelayValue, LEN_STAMP);
 	_antennaDelay.setTimestamp(antennaDelayBytes);
 	writeBytes(TX_ANTD, NO_SUB, antennaDelayBytes, LEN_TX_ANTD);
