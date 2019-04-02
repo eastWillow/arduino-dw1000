@@ -68,6 +68,7 @@ boolean    DW1000Class::_permanentReceive    = false;
 uint8_t    DW1000Class::_deviceMode          = IDLE_MODE; // TODO replace by enum
 
 int32_t    DW1000Class::_antennaDelayValue   = 16384;
+int32_t    DW1000Class::_manualPowerSetting  = 0;
 
 boolean    DW1000Class::_debounceClockEnabled = false;
 
@@ -691,6 +692,9 @@ void DW1000Class::tune() {
 		// TODO proper error/warning handling
 	}
 
+	if (_manualPowerSetting != 0) {
+		writeValueToBytes(txpower, _manualPowerSetting, LEN_TX_POWER);
+	}
 
 	// writeValueToBytes(txpower, 0x1F1F1F1FL, LEN_TX_POWER);
 
@@ -1304,6 +1308,13 @@ void DW1000Class::setPulseFrequency(byte freq) {
 
 byte DW1000Class::getPulseFrequency() {
 	return _pulseFrequency;
+}
+
+void DW1000Class::setManualPower(int32_t power) {
+	_manualPowerSetting = power;
+}
+int32_t DW1000Class::getManualPower() {
+	return _manualPowerSetting;
 }
 
 void DW1000Class::setAntennaDelay(int32_t delay) {

@@ -242,6 +242,9 @@ public:
 	static void setAntennaDelay(int32_t delay);
 	static int32_t getAntennaDelay();
 
+	static void setManualPower(int32_t power);
+	static int32_t getManualPower();
+
 	static void setPreambleLength(byte prealen);
 	static void setChannel(byte channel);
 	static void setPreambleCode(byte preacode);
@@ -489,6 +492,9 @@ public:
 
 	// antenna delay correction value
 	static int32_t _antennaDelayValue;
+
+	// manual power setting
+	static int32_t _manualPowerSetting;
 
 	// whether debounce clock is active
 	static boolean _debounceClockEnabled;
