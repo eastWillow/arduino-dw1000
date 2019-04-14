@@ -36,43 +36,7 @@ if(time-timer > _timerDelay) then (yes)
     :timerTick();
     partition timerTick{
         if(_networkDevicesNumber > 0 && counterForBlink != 0) then(yes)
-            if(_type == TAG) then(yes)
-                :_expectedMsgId = POLL_ACK;
-                #HotPink:transmitPoll(nullptr);
-                note left :send a prodcast poll
-                note left :because the Tag can idel between the time tick?
-                partition transmitPoll(nullptr){
-                    :transmitInit();
-                    if(myDistantDevice == nullptr) then(yes)
-                        :_timerDelay = DEFAULT_TIMER_DELAY+(uint16_t)(_networkDevicesNumber*3*DEFAULT_REPLY_DELAY_TIME/1000);
-                        :byte shortBroadcast[2] = {0xFF, 0xFF};
-                        :_globalMac.generateShortMACFrame(data, _currentShortAddress, shortBroadcast);
-                        :data[SHORT_MAC_LEN]   = POLL;
-                        :data[SHORT_MAC_LEN+1] = _networkDevicesNumber;
-                        :i = 0;
-                        while(i < _networkDevicesNumber) is (yes)
-                            :_networkDevices[i].setReplyTime((2*i+1)*DEFAULT_REPLY_DELAY_TIME);
-                            :memcpy(data+SHORT_MAC_LEN+2+4*i, _networkDevices[i].getByteShortAddress(), 2);
-                            :uint16_t replyTime = _networkDevices[i].getReplyTime();
-                            :memcpy(data+SHORT_MAC_LEN+2+2+4*i, &replyTime, 2);
-                        endwhile
-                        :copyShortAddress(_lastSentToShortAddress, shortBroadcast);
-                    else
-                        :_timerDelay = DEFAULT_TIMER_DELAY;
-                        :_globalMac.generateShortMACFrame(data, _currentShortAddress, myDistantDevice->getByteShortAddress());
-                        :data[SHORT_MAC_LEN]   = POLL;
-                        :data[SHORT_MAC_LEN+1] = 1;
-                        :uint16_t replyTime = myDistantDevice->getReplyTime();
-                        :memcpy(data+SHORT_MAC_LEN+2, &replyTime, sizeof(uint16_t)); // todo is code correct?
-                        :copyShortAddress(_lastSentToShortAddress, myDistantDevice->getByteShortAddress());
-                    endif
-                    :transmit(data);
-                }
-            endif
         elseif(counterForBlink == 0) then(yes)
-            if(_type == TAG) then (yes)
-                :transmitBlink();
-            endif
             :checkForInactiveDevices();
             note left:check for inactive devices if we are a TAG or ANCHOR
             partition checkForInactiveDevices(){
@@ -136,37 +100,6 @@ if(_sentAck == true) then(yes)
                 :DW1000.getTransmitTimestamp(myDistantDevice->timePollAckSent);
             endif
         endif
-    elseif(_type == TAG) then (yes)
-        if(messageType == POLL) then (yes)
-            :DW1000.getTransmitTimestamp(timePollSent);
-            if(_lastSentToShortAddress[0] == 0xFF && _lastSentToShortAddress[1] == 0xFF) then (yes)
-                :i = 0;
-                while (i < _networkDevicesNumber) is (yes)
-                    :_networkDevices[i].timePollSent = timePollSent;
-                    :i++;
-                endwhile
-            else
-                :DW1000Device* myDistantDevice = searchDistantDevice(_lastSentToShortAddress);
-                if (myDistantDevice != 0) then(yes)
-                    :myDistantDevice->timePollSent = timePollSent;
-                endif
-            endif
-        elseif(messageType == RANGE) then (yes)
-            :DW1000.getTransmitTimestamp(timeRangeSent);
-            if(_lastSentToShortAddress[0] == 0xFF && _lastSentToShortAddress[1] == 0xFF) then (yes)
-                :i = 0;
-                while (i < _networkDevicesNumber) is (yes)
-                    :_networkDevices[i].timeRangeSent = timeRangeSent;
-                    :i++;
-                endwhile
-            else
-                :DW1000Device* myDistantDevice = searchDistantDevice(_lastSentToShortAddress);
-                if (myDistantDevice == true)
-                    :myDistantDevice->timeRangeSent = timeRangeSent;
-                endif
-            endif
-        endif
-    endif
 endif
 if(_receivedAck == true) then(yes)
     :_receivedAck = false;
@@ -248,22 +181,6 @@ if(_receivedAck == true) then(yes)
         endif
 
         :_expectedMsgId = POLL;
-    elseif(messageType == RANGING_INIT && _type == TAG) then(yes)
-        :_globalMac.decodeLongMACFrame(data, address);
-        :DW1000Device myAnchor(address, true);
-        note right:**true**: we have a 8 bytes address
-        if(addNetworkDevices(&myAnchor, true) == true) 
-        floating note right:**true**: we have a 8 bytes address
-            if(_handleNewDevice != 0)
-                :(*_handleNewDevice)(&myAnchor);
-                note right: arduino newDevice(DW1000Device* device)
-            endif
-        endif
-        :noteActivity();
-        partition noteActivity(){
-            :_lastActivity = millis();
-            note right:update activity timestamp, so that we do not reach "resetPeriod"
-        }
     else
         :_globalMac.decodeShortMACFrame(data, address);
         :DW1000Device* myDistantDevice = searchDistantDevice(address);
@@ -355,78 +272,6 @@ if(_receivedAck == true) then(yes)
                     :i++;
                 endwhile
             endif
-        elseif(_type == TAG)
-            if(messageType != _expectedMsgId)
-                stop
-            endif
-            if(messageType == POLL_ACK)
-                :DW1000.getReceiveTimestamp(myDistantDevice->timePollAckReceived);
-                :myDistantDevice->noteActivity();
-                partition noteActivity(){
-                    :_lastActivity = millis();
-                    note left:update activity timestamp, so that we do not reach "resetPeriod"
-                }
-                if(myDistantDevice->getIndex() == _networkDevicesNumber-1)
-                    :_expectedMsgId = RANGE_REPORT;
-                    :transmitRange(nullptr);
-                    partition transmitRange(nullptr){
-                        if(myDistantDevice == nullptr) then(yes)
-                            :_timerDelay = DEFAULT_TIMER_DELAY+(uint16_t)(_networkDevicesNumber*3*DEFAULT_REPLY_DELAY_TIME/1000);
-                            :byte shortBroadcast[2] = {0xFF, 0xFF};
-                            :_globalMac.generateShortMACFrame(data, _currentShortAddress, shortBroadcast);
-                            :data[SHORT_MAC_LEN]   = RANGE;
-                            :data[SHORT_MAC_LEN+1] = _networkDevicesNumber;
-                            note right:we enter the number of devices
-                            :DW1000Time deltaTime     = DW1000Time(DEFAULT_REPLY_DELAY_TIME, DW1000Time::MICROSECONDS);
-                            :DW1000Time timeRangeSent = DW1000.setDelay(deltaTime);
-                            note right:delay sending the message and remember expected future sent timestamp
-                            :i = 0;
-                            while(i < _networkDevicesNumber) is (yes)
-                                :memcpy(data+SHORT_MAC_LEN+2+17*i, _networkDevices[i].getByteShortAddress(), 2);
-                                note right:we write the short address of our device
-                                :_networkDevices[i].timeRangeSent = timeRangeSent;
-                                :_networkDevices[i].timePollSent.getTimestamp(data+SHORT_MAC_LEN+4+17*i);
-                                :_networkDevices[i].timePollAckReceived.getTimestamp(data+SHORT_MAC_LEN+9+17*i);
-                                :_networkDevices[i].timeRangeSent.getTimestamp(data+SHORT_MAC_LEN+14+17*i);
-                                note right:we get the device which correspond to the message which was sent (need to be filtered by MAC address)
-                            endwhile
-
-                            :copyShortAddress(_lastSentToShortAddress, shortBroadcast);
-                        else
-                            :_globalMac.generateShortMACFrame(data, _currentShortAddress, myDistantDevice->getByteShortAddress());
-                            :data[SHORT_MAC_LEN] = RANGE;
-                            note right:delay sending the message and remember expected future sent timestamp
-                            :DW1000Time deltaTime = DW1000Time(_replyDelayTimeUS, DW1000Time::MICROSECONDS);
-                            note right:we get the device which correspond to the message which was sent (need to be filtered by MAC address)
-                            :myDistantDevice->timeRangeSent = DW1000.setDelay(deltaTime);
-                            :myDistantDevice->timePollSent.getTimestamp(data+1+SHORT_MAC_LEN);
-                            :myDistantDevice->timePollAckReceived.getTimestamp(data+6+SHORT_MAC_LEN);
-                            :myDistantDevice->timeRangeSent.getTimestamp(data+11+SHORT_MAC_LEN);
-                            :copyShortAddress(_lastSentToShortAddress, myDistantDevice->getByteShortAddress());
-                        endif
-                        :transmit(data);
-                    }
-                endif
-            #HotPink:elseif(messageType == RANGE_REPORT)
-                :memcpy(&curRange, data+1+SHORT_MAC_LEN, 4);
-                note right:this is the optional message in the application notes
-                :memcpy(&curRXPower, data+5+SHORT_MAC_LEN, 4);
-                if(_useRangeFilter == true) then(yes)
-                    if((myDistantDevice->getRange() != 0.0f) then(yes)
-                        :curRange = filterValue(curRange, myDistantDevice->getRange(), _rangeFilterValue);
-                    endif
-                endif
-
-                :myDistantDevice->setRange(curRange);
-                :myDistantDevice->setRXPower(curRXPower);
-                :_lastDistantDevice = myDistantDevice->getIndex();
-                if(_handleNewRange != 0) then(yes)
-                    :(*_handleNewRange)();
-                endif
-            elseif(messageType == RANGE_FAILED)
-                stop
-            endif
-        endif
     endif
 endif
 stop

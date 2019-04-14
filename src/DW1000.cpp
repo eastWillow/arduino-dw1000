@@ -738,7 +738,7 @@ void DW1000Class::handleInterrupt() {
 
 	uint32_t now = micros();
 
-	// Serial.print('i');
+	//Serial.print('i');
 
 	// read current status and handle via callbacks
 	readSystemEventStatusRegister();
@@ -1382,9 +1382,9 @@ void DW1000Class::setDefaults() {
 		useSmartPower(false);
 		suppressFrameCheck(false);
 		//for global frame filtering
-		setFrameFilter(true);
-		setFrameFilterAllowData(true);
-		setFrameFilterAllowReserved(true);
+		setFrameFilter(false);
+		//setFrameFilterAllowData(true);
+		//setFrameFilterAllowReserved(true);
 		/* old defaults with active frame filter - better set filter in every script where you really need it
 		setFrameFilter(true);
 		//for data frame (poll, poll_ack, range, range report, range failed) filtering

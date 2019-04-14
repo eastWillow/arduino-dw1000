@@ -98,6 +98,8 @@ public:
 	//ranging functions
 	static int16_t detectMessageType(byte datas[]); // TODO check return type
 	static void loop();
+	static void Tag_loop();
+	static void Anchor_loop();
 	static void useRangeFilter(boolean enabled);
 	// Used for the smoothing algorithm (Exponential Moving Average). newValue must be >= 2. Default 15.
 	static void setRangeFilterValue(uint16_t newValue);
@@ -120,7 +122,7 @@ public:
 	static void visualizeDatas(byte datas[]);
 
 
-private:
+//private:
 	//other devices in the network
 	static DW1000Device _networkDevices[MAX_DEVICES];
 	static volatile uint8_t _networkDevicesNumber;
@@ -129,7 +131,7 @@ private:
 	static byte         _currentShortAddress[2];
 	static byte         _lastSentToShortAddress[2];
 	static DW1000Mac    _globalMac;
-	static int32_t      timer;
+	static int32_t      last_time;
 	static int16_t      counterForBlink;
 	
 	//Handlers:
