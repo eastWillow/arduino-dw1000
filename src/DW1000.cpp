@@ -1382,7 +1382,9 @@ void DW1000Class::setDefaults() {
 		useSmartPower(false);
 		suppressFrameCheck(false);
 		//for global frame filtering
-		setFrameFilter(false);
+		setFrameFilter(true);
+		setFrameFilterAllowData(true);
+		setFrameFilterAllowReserved(true);
 		/* old defaults with active frame filter - better set filter in every script where you really need it
 		setFrameFilter(true);
 		//for data frame (poll, poll_ack, range, range report, range failed) filtering

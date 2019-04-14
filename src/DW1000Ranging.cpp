@@ -188,7 +188,7 @@ void DW1000RangingClass::startAsAnchor(char address[], const byte mode[], const 
 	//defined type as anchor
 	_type = ANCHOR;
 	
-	Serial.println("### ANCHOR ###");
+	//Serial.println("### ANCHOR ###");
 	
 }
 
@@ -219,7 +219,7 @@ void DW1000RangingClass::startAsTag(char address[], const byte mode[], const boo
 	//defined type as tag
 	_type = TAG;
 	
-	Serial.println("### TAG ###");
+	//Serial.println("### TAG ###");
 }
 
 boolean DW1000RangingClass::addNetworkDevices(DW1000Device* device, boolean shortAddress) {
