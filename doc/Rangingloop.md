@@ -281,7 +281,7 @@ if(_receivedAck == true) then(yes)
                     :memcpy(shortAddress, data+SHORT_MAC_LEN+2+i*4, 2);
                     if(shortAddress[0] == _currentShortAddress[0] && shortAddress[1] == _currentShortAddress[1])
                         :memcpy(&replyTime, data+SHORT_MAC_LEN+2+i*4+2, 2);
-                        :_replyDelayTimeUS = replyTime;
+                        :**_replyDelayTimeUS** = replyTime;
                         :_protocolFailed = false;
                         :DW1000.getReceiveTimestamp(myDistantDevice->timePollReceived);
                         :myDistantDevice->noteActivity();
@@ -341,7 +341,7 @@ if(_receivedAck == true) then(yes)
                                 :memcpy(data+1+SHORT_MAC_LEN, &curRange, 4);
                                 :memcpy(data+5+SHORT_MAC_LEN, &curRXPower, 4);
                                 :copyShortAddress(_lastSentToShortAddress, myDistantDevice->getByteShortAddress());
-                                :transmit(data, DW1000Time(_replyDelayTimeUS, DW1000Time::MICROSECONDS));
+                                :transmit(data, DW1000Time(**_replyDelayTimeUS**, DW1000Time::MICROSECONDS));
                             }
                             :_lastDistantDevice = myDistantDevice->getIndex();
                             if(_handleNewRange != 0)
@@ -396,7 +396,7 @@ if(_receivedAck == true) then(yes)
                             :_globalMac.generateShortMACFrame(data, _currentShortAddress, myDistantDevice->getByteShortAddress());
                             :data[SHORT_MAC_LEN] = RANGE;
                             note right:delay sending the message and remember expected future sent timestamp
-                            :DW1000Time deltaTime = DW1000Time(_replyDelayTimeUS, DW1000Time::MICROSECONDS);
+                            :DW1000Time deltaTime = DW1000Time(**_replyDelayTimeUS**, DW1000Time::MICROSECONDS);
                             note right:we get the device which correspond to the message which was sent (need to be filtered by MAC address)
                             :myDistantDevice->timeRangeSent = DW1000.setDelay(deltaTime);
                             :myDistantDevice->timePollSent.getTimestamp(data+1+SHORT_MAC_LEN);

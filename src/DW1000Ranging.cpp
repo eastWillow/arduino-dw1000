@@ -734,6 +734,7 @@ void DW1000RangingClass::loop()
 	}
 }
 
+static bool needToBlink_FLAG = true;
 void DW1000RangingClass::Tag_loop()
 {
 	//we check if needed to reset !
@@ -745,11 +746,17 @@ void DW1000RangingClass::Tag_loop()
 		//timer tick
 		if (_networkDevicesNumber > 0 && counterForBlink != 0)
 		{
+			//_expectedMsgId = POLL_ACK;
+			//send a prodcast poll
+			//transmitPoll(nullptr);
+			//Serial.println("4_SNED_POLL");
 		}
 		else if (counterForBlink == 0)
 		{
-			Serial.println("1_SEND_BLINK");
-			transmitBlink();
+			//if(needToBlink_FLAG == true){
+				Serial.println("1_SEND_BLINK");
+				transmitBlink();
+			//}
 			//check for inactive devices if we are a TAG or ANCHOR
 			checkForInactiveDevices();
 		}
@@ -757,6 +764,9 @@ void DW1000RangingClass::Tag_loop()
 		if (counterForBlink > 20)
 		{
 			counterForBlink = 0;
+		}
+		if(_networkDevicesNumber < 1){
+			needToBlink_FLAG = true;
 		}
 	}
 
@@ -851,7 +861,8 @@ void DW1000RangingClass::Tag_loop()
 					_expectedMsgId = POLL_ACK;
 					//send a prodcast poll
 					Serial.println("4_SNED_POLL");
-					transmitPoll(&myAnchor);
+					transmitPoll(nullptr);
+					//transmitPoll(&myAnchor);
 				}
 			}
 
@@ -903,40 +914,17 @@ void DW1000RangingClass::Tag_loop()
 					//in the case the message come from our last device:
 					if (myDistantDevice->getIndex() == _networkDevicesNumber - 1)
 					{
-						_expectedMsgId = RANGE_REPORT;
+						_expectedMsgId = POLL_ACK;
 						//and transmit the next message (range) of the ranging protocole (in broadcast)
-						transmitRange(nullptr);
+						transmitRange(nullptr); // TODO need to fix prevent to another Anchor will dead.
 						//transmitRange(myDistantDevice);
 						Serial.println("8_SEND_RANGE");
-					}
-				}
-				else if (messageType == RANGE_REPORT)
-				{
-
-					float curRange;
-					memcpy(&curRange, data + 1 + SHORT_MAC_LEN, 4);
-					float curRXPower;
-					memcpy(&curRXPower, data + 5 + SHORT_MAC_LEN, 4);
-
-					if (_useRangeFilter)
-					{
-						//Skip first range
-						if (myDistantDevice->getRange() != 0.0f)
-						{
-							curRange = filterValue(curRange, myDistantDevice->getRange(), _rangeFilterValue);
-						}
-					}
-
-					//we have a new range to save !
-					myDistantDevice->setRange(curRange);
-					myDistantDevice->setRXPower(curRXPower);
-
-					//We can call our handler !
-					//we have finished our range computation. We send the corresponding handler
-					_lastDistantDevice = myDistantDevice->getIndex();
-					if (_handleNewRange != 0)
-					{
-						(*_handleNewRange)();
+						needToBlink_FLAG = false;
+						delay(_networkDevicesNumber*DEFAULT_TIMER_DELAY);
+						//send a prodcast poll
+						Serial.println("4_SNED_POLL");
+						transmitPoll(nullptr);
+						//AFTER HERE WILL POLL AGAIN
 					}
 				}
 				else if (messageType == RANGE_FAILED)
@@ -1060,6 +1048,7 @@ void DW1000RangingClass::Anchor_loop()
 				if (messageType != _expectedMsgId)
 				{
 					// unexpected message, start over again (except if already POLL)
+					// NO, will get the RANGE ?????
 					_protocolFailed = true;
 				}
 				if (messageType == POLL)
@@ -1079,7 +1068,7 @@ void DW1000RangingClass::Anchor_loop()
 						/*
 						we must follow at this data format
 						*/
-						
+
 						//we test if the short address is our address
 						if (shortAddress[0] == _currentShortAddress[0] && shortAddress[1] == _currentShortAddress[1])
 						{
@@ -1087,6 +1076,8 @@ void DW1000RangingClass::Anchor_loop()
 							uint16_t replyTime;
 							memcpy(&replyTime, data + SHORT_MAC_LEN + 2 + i * 4 + 2, 2);
 							//we configure our replyTime;
+
+							// it will broadcast the anchor need to delay but why collions?
 							_replyDelayTimeUS = replyTime;
 
 							// on POLL we (re-)start, so no protocol failure
@@ -1103,7 +1094,8 @@ void DW1000RangingClass::Anchor_loop()
 
 							return;
 						}
-						else{
+						else
+						{
 							Serial.println("FAILED AT 6_SEND_POLLACK");
 						}
 					}
@@ -1159,9 +1151,9 @@ void DW1000RangingClass::Anchor_loop()
 								myDistantDevice->setFPPower(DW1000.getFirstPathPower());
 								myDistantDevice->setQuality(DW1000.getReceiveQuality());
 
-								//we send the range to TAG
-								transmitRangeReport(myDistantDevice);
-
+								//we don't send the range to TAG
+								//transmitRangeReport(myDistantDevice);
+								Serial.println("10_RANGE_COMPUTED");
 								//we have finished our range computation. We send the corresponding handler
 								_lastDistantDevice = myDistantDevice->getIndex();
 								if (_handleNewRange != 0)
@@ -1175,6 +1167,10 @@ void DW1000RangingClass::Anchor_loop()
 							}
 
 							return;
+						}
+						else
+						{
+							Serial.println("FAILED AT 10_SEND_RANGE_REPORT");
 						}
 					}
 				}
