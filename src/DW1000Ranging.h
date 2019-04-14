@@ -53,7 +53,7 @@
 //in ms
 #define DEFAULT_RESET_PERIOD 200
 //in us
-#define DEFAULT_REPLY_DELAY_TIME 7000
+#define DEFAULT_REPLY_DELAY_TIME 10000
 
 //sketch type (anchor or tag)
 #define TAG 0
@@ -100,6 +100,7 @@ public:
 	static void loop();
 	static void Tag_loop();
 	static void Anchor_loop();
+	static void loopwoReport();
 	static void useRangeFilter(boolean enabled);
 	// Used for the smoothing algorithm (Exponential Moving Average). newValue must be >= 2. Default 15.
 	static void setRangeFilterValue(uint16_t newValue);
