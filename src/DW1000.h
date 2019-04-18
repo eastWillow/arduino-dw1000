@@ -485,7 +485,9 @@ public:
 
 	/* PAN and short address. */
 	static byte _networkAndAddress[LEN_PANADR];
-
+	static byte _network[LEN_PAN_ID];
+	static byte _address[LEN_SHORT_ADDR];
+	
 	/* internal helper that guide tuning the chip. */
 	static boolean    _smartPower;
 	static byte       _extendedFrameLength;
@@ -568,6 +570,8 @@ public:
 	static void	readDeviceAddress();
 	static void writeNetworkId();
 	static void	writeDeviceAddress();
+	static void readNetworkIdAndDeviceAddress();
+	static void writeNetworkIdAndDeviceAddress();
 	static void readSystemEventMaskRegister();
 	static void writeSystemEventMaskRegister();
 	static void readChannelControlRegister();

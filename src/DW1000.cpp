@@ -46,6 +46,8 @@ byte DW1000Class::_txfctrl[LEN_TX_FCTRL];
 byte DW1000Class::_sysmask[LEN_SYS_MASK];
 byte DW1000Class::_chanctrl[LEN_CHAN_CTRL];
 byte DW1000Class::_networkAndAddress[LEN_PANADR];
+byte DW1000Class::_network[LEN_PAN_ID];
+byte DW1000Class::_address[LEN_SHORT_ADDR];
 
 // monitoring
 byte DW1000Class::_vmeas3v3 = 0;
@@ -1259,6 +1261,26 @@ void DW1000Class::readNetworkIdAndDeviceAddress()
 void DW1000Class::writeNetworkIdAndDeviceAddress()
 {
     writeBytes(PANADR, NO_SUB, _networkAndAddress, LEN_PANADR);
+}
+
+void DW1000Class::readNetworkId()
+{
+    readBytes(PANADR, PAN_ID, _network, LEN_PAN_ID);
+}
+
+void DW1000Class::writeNetworkId()
+{
+    writeBytes(PANADR, PAN_ID, _network, LEN_PAN_ID);
+}
+
+void DW1000Class::readDeviceAddress()
+{
+    readBytes(PANADR, SHORT_ADDR, _address, LEN_SHORT_ADDR);
+}
+
+void DW1000Class::writeDeviceAddress()
+{
+    writeBytes(PANADR, SHORT_ADDR, _address, LEN_SHORT_ADDR);
 }
 
 void DW1000Class::readSystemEventMaskRegister()

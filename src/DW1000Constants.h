@@ -46,6 +46,10 @@
 // PAN identifier, short address register
 #define PANADR 0x03
 #define LEN_PANADR 4
+#define PAN_ID 15
+#define LEN_PAN_ID 2
+#define SHORT_ADDR 0
+#define LEN_SHORT_ADDR 2
 
 // device configuration register
 #define SYS_CFG 0x04

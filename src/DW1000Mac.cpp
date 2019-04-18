@@ -93,22 +93,16 @@ void DW1000Mac::generateShortMACFrame(byte frame[], byte sourceShortAddress[], b
 	//sequence number (11.3) modulo 256
 	*(frame+2) = _seqNumber;
 	//Destination PAN ID
-	byte networkReverse[2];
-	reverseArray(networkReverse, network, 2);
-	memcpy(frame+3, networkReverse, 2);
+	memcpy(frame+3, network, 2);
 	
 	//destination address (2 bytes)
-	byte destinationShortAddressReverse[2];
-	reverseArray(destinationShortAddressReverse, destinationShortAddress, 2);
-	memcpy(frame+5, destinationShortAddressReverse, 2);
+	memcpy(frame+5, destinationShortAddress, 2);
 	
 	//source PAN ID
-	//memcpy(frame+7, networkReverse, 2);
+	//memcpy(frame+7, network, 2);
 
 	//source address (2 bytes)
-	byte sourceShortAddressReverse[2];
-	reverseArray(sourceShortAddressReverse, sourceShortAddress, 2);
-	memcpy(frame+7, sourceShortAddressReverse, 2);
+	memcpy(frame+7, sourceShortAddress, 2);
 	//we increment seqNumber
 	incrementSeqNumber();
 }
