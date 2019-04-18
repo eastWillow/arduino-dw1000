@@ -55,6 +55,9 @@
 #define FC_2 0x8C
 #define FC_2_SHORT 0x88
 
+#define FC_1_DATA_WO_ACK 0x41
+#define FC_1_DATA_W_ACK 0x61
+
 #define PAN_ID_1 0xCA
 #define PAN_ID_2 0xDE
 
@@ -93,7 +96,7 @@ public:
 	//2 bytes for Desination Address and 2 bytes for Source Address
 	//total=9 bytes
 	void generateShortMACFrame(byte frame[], byte sourceShortAddress[], byte destinationShortAddress[]);
-
+	void generateShortMACFrame(byte frame[], byte sourceShortAddress[], byte destinationShortAddress[],byte network[]);
 	//the long frame for Ranging init
 	//8 bytes for Destination Address and 2 bytes for Source Address
 	//total of

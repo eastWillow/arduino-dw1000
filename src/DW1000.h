@@ -148,6 +148,14 @@ public:
 	*/
 	static void getPrintableDeviceMode(char msgBuffer[]);
 
+	/**
+	Generates a String representation of the System Event Status
+
+	@param[out] msgBuffer The String buffer to be filled with printable device information.
+		Provide 128 bytes, this should be sufficient.
+	*/
+	static void getPrintableSystemEventStatus(char msgBuffer[]);
+
 	/* ##### Device address management, filters ################################## */
 	/**
 	(Re-)set the network identifier which the selected chip should be associated with. This
@@ -291,6 +299,7 @@ public:
 	static void interruptOnRxFrameStart(boolean val);
 	static void interruptOnTxPreambleSent(boolean val);
 	static void interruptOnTxFrameStart(boolean val);
+	static void interruptOnAutomaticFrameFilteringrejection(boolean val);
 
 	/* callback handler management. */
 	static void attachErrorHandler(void (* handleError)(void)) {
@@ -442,6 +451,11 @@ public:
 	static constexpr byte MODE_LONGDATA_RANGE_ACCURACY[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_64MHZ, TX_PREAMBLE_LEN_2048};
 
 	static constexpr byte MODE_MAGIC[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_1024};
+	
+	//Please Refer DataSheet V2.12 P29
+	static constexpr byte MODE_1[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_1024}; //Data 12
+	static constexpr byte MODE_2[] = {TRX_RATE_6800KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_128}; //Data 12
+	static constexpr byte MODE_3[] = {TRX_RATE_110KBPS, TX_PULSE_FREQ_16MHZ, TX_PREAMBLE_LEN_1024}; //Data 30
 
 //private:
 	/* chip select, reset and interrupt pins. */
@@ -550,8 +564,10 @@ public:
 	static void readSystemEventStatusRegister();
 	static void readSystemConfigurationRegister();
 	static void writeSystemConfigurationRegister();
-	static void readNetworkIdAndDeviceAddress();
-	static void writeNetworkIdAndDeviceAddress();
+	static void readNetworkId();
+	static void	readDeviceAddress();
+	static void writeNetworkId();
+	static void	writeDeviceAddress();
 	static void readSystemEventMaskRegister();
 	static void writeSystemEventMaskRegister();
 	static void readChannelControlRegister();

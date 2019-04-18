@@ -240,11 +240,28 @@ partition DW1000.select{
 }
 :DW1000.newConfiguration();
 partition DW1000.newConfiguration{
-
+    :idle();
+    :readNetworkIdAndDeviceAddress();
+    :readSystemConfigurationRegister();
+    :readChannelControlRegister();
+    :readTransmitFrameControlRegister();
+    :readSystemEventMaskRegister();
 }
 :DW1000.setDefaults();
 partition DW1000.setDefaults{
-
+    if(_deviceMode == IDLE_MODE) then (yes)
+        :useExtendedFrameLength(false);
+        :useSmartPower(false);
+        :suppressFrameCheck(false);
+        :setFrameFilter(false);
+        :interruptOnSent(true);
+        :interruptOnReceived(true);
+        :interruptOnReceiveFailed(true);
+        :interruptOnReceiveTimestampAvailable(false);
+        :interruptOnAutomaticAcknowledgeTrigger(true);
+        :setReceiverAutoReenable(true);
+        :enableMode(MODE_LONGDATA_RANGE_LOWPOWER);
+    endif
 }
 :DW1000.setDeviceAddress(5);
 :DW1000.setNetworkId(10);
@@ -361,3 +378,7 @@ endwhile
 end
 @enduml
 ```
+
+可以參考
+int testapprun(instance_data_t *inst, int message, uint32 time_ms)
+EVK1000

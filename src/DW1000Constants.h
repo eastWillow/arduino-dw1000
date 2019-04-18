@@ -80,6 +80,7 @@
 // system event status register
 #define SYS_STATUS 0x0F
 #define LEN_SYS_STATUS 5
+#define IRQS_BIT 0
 #define CPLOCK_BIT 1
 #define AAT_BIT 3
 #define TXFRB_BIT 4
@@ -89,18 +90,22 @@
 #define RXPRD_BIT 8
 #define RXSFDD_BIT 9
 #define LDEDONE_BIT 10
+#define RXPHD_BIT 11
 #define RXPHE_BIT 12
 #define RXDFR_BIT 13
 #define RXFCG_BIT 14
 #define RXFCE_BIT 15
 #define RXRFSL_BIT 16
 #define RXRFTO_BIT 17
-#define RXPTO_BIT 21
-#define RXSFDTO_BIT 26
 #define LDEERR_BIT 18
+#define RXPTO_BIT 21
+#define SLP2INIT_BIT 23
 #define RFPLL_LL_BIT 24
 #define CLKPLL_LL_BIT 25
+#define RXSFDTO_BIT 26
 #define HPDWARN 27
+#define AFFREJ_BIT 29
+#define RXPREJ_BIT 33
 
 // system event mask register
 // NOTE: uses the bit definitions of SYS_STATUS (below 32)
