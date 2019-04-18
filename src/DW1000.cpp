@@ -1002,12 +1002,19 @@ void DW1000Class::handleInterrupt()
 {
 
     uint32_t now = micros();
-    //Serial.print('i');
-    char msg[500];
-    readSystemEventStatusRegister();
-    getPrettyBytes(DW1000._sysstatus, msg, LEN_SYS_STATUS);
-    Serial.println(msg);
-    getPrintableSystemEventStatus(msg);
+
+    /*
+    SYSTEM STATUS DEBUG
+    */
+    //char msg[500];
+    //readSystemEventStatusRegister();
+    //getPrettyBytes(_sysstatus, msg, LEN_SYS_STATUS);
+    //Serial.println(msg);
+    //getPrintableSystemEventStatus(msg);
+    /*
+    SYSTEM STATUS DEBUG
+    */
+
     // read current status and handle via callbacks
     readSystemEventStatusRegister();
 
@@ -1225,12 +1232,11 @@ void DW1000Class::getPrintableSystemEventStatus(char msgBuffer[])
     if(getBit(_sysstatus, LEN_SYS_STATUS, RXDFR_BIT)) Serial.println("Receiver Data Frame Ready");
     if(getBit(_sysstatus, LEN_SYS_STATUS, RXFCG_BIT)) Serial.println("Receiver FCS Good");
     if(getBit(_sysstatus, LEN_SYS_STATUS, AFFREJ_BIT)) Serial.println("Automatic Frame Filtering rejection");
-
     if(getBit(_sysstatus, LEN_SYS_STATUS, TXFRB_BIT)) Serial.println("Transmit Frame Begins");
     if(getBit(_sysstatus, LEN_SYS_STATUS, TXPRS_BIT)) Serial.println("Transmit Preamble Sent");
     if(getBit(_sysstatus, LEN_SYS_STATUS, TXPHS_BIT)) Serial.println("Transmit PHY Header Sent");
     if(getBit(_sysstatus, LEN_SYS_STATUS, TXFRS_BIT)) Serial.println("Transmit Frame Sent");
-
+    if(getBit(_sysstatus, LEN_SYS_STATUS, RXRFTO_BIT)) Serial.println("The Receive Frame Wait Timeout");
     Serial.println("===SYSTEM EVENT STATUS===");
 }
 
@@ -1463,6 +1469,16 @@ void DW1000Class::setFrameFilterAllowReserved(boolean val)
     setBit(_syscfg, LEN_SYS_CFG, FFAR_BIT, val);
 }
 
+void DW1000Class::setFrameFilterAllowType4(boolean val)
+{
+    setBit(_syscfg, LEN_SYS_CFG, FFA4_BIT, val);
+}
+
+void DW1000Class::setFrameFilterAllowType5(boolean val)
+{
+    setBit(_syscfg, LEN_SYS_CFG, FFA5_BIT, val);
+}
+
 void DW1000Class::setDoubleBuffering(boolean val)
 {
     setBit(_syscfg, LEN_SYS_CFG, DIS_DRXB_BIT, !val);
@@ -1476,6 +1492,11 @@ void DW1000Class::setInterruptPolarity(boolean val)
 void DW1000Class::setReceiverAutoReenable(boolean val)
 {
     setBit(_syscfg, LEN_SYS_CFG, RXAUTR_BIT, val);
+}
+
+void DW1000Class::setReceiveWaitTimeoutEnable(boolean val)
+{
+    setBit(_syscfg, LEN_SYS_CFG, RXWTOE_BIT, val);
 }
 
 void DW1000Class::interruptOnSent(boolean val)
@@ -1634,6 +1655,20 @@ void DW1000Class::useSmartPower(boolean smartPower)
 {
     _smartPower = smartPower;
     setBit(_syscfg, LEN_SYS_CFG, DIS_STXP_BIT, !smartPower);
+}
+
+void DW1000Class::setReceiveFrameWaitTimeout(uint16_t val){
+    byte ReceiveFrameWaitTimeout[LEN_RX_FWTO];
+    writeValueToBytes(ReceiveFrameWaitTimeout, val, LEN_RX_FWTO);
+    writeBytes(RX_FWTO, NO_SUB, ReceiveFrameWaitTimeout, LEN_RX_FWTO);
+}
+
+void DW1000Class::getReceiveFrameWaitTimeout(){
+    byte ReceiveFrameWaitTimeout[LEN_RX_FWTO];
+    readBytes(RX_FWTO, NO_SUB, ReceiveFrameWaitTimeout, LEN_RX_FWTO);
+    char msg[500];
+    getPrettyBytes(ReceiveFrameWaitTimeout, msg, LEN_RX_FWTO);
+    Serial.println(msg);
 }
 
 DW1000Time DW1000Class::setDelay(const DW1000Time &delay)
@@ -1865,22 +1900,18 @@ void DW1000Class::setDefaults()
         setFrameFilter(false);
         //setFrameFilterAllowData(true);
         //setFrameFilterAllowReserved(true);
-        /* old defaults with active frame filter - better set filter in every script where you really need it
-		setFrameFilter(true);
-		//for data frame (poll, poll_ack, range, range report, range failed) filtering
-		setFrameFilterAllowData(true);
-		//for reserved (blink) frame filtering
-		setFrameFilterAllowReserved(true);
+		//setFrameFilterAllowReserved(true);
 		//setFrameFilterAllowMAC(true);
 		//setFrameFilterAllowBeacon(true);
 		//setFrameFilterAllowAcknowledgement(true);
-		*/
+
         interruptOnSent(true);
         interruptOnReceived(true);
         interruptOnReceiveFailed(false);
         interruptOnReceiveTimestampAvailable(false);
         interruptOnAutomaticAcknowledgeTrigger(false);
         interruptOnAutomaticFrameFilteringrejection(false);
+        interruptOnReceiveTimeout(true);
 
         // Set up message timing interrupts
         // interruptOnRxPreambleDetect(false);
@@ -1888,7 +1919,7 @@ void DW1000Class::setDefaults()
         // interruptOnRxFrameStart(false);
         // interruptOnTxFrameStart(false);
 
-        setReceiverAutoReenable(true);
+        //setReceiverAutoReenable(false);
         // default mode when powering up the chip
         // still explicitly selected for later tuning
         enableMode(MODE_LONGDATA_RANGE_LOWPOWER);

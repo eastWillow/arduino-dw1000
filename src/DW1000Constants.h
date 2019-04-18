@@ -61,9 +61,12 @@
 #define FFAA_BIT 4
 #define FFAM_BIT 5
 #define FFAR_BIT 6
+#define FFA4_BIT 7
+#define FFA5_BIT 8
 #define DIS_DRXB_BIT 12
 #define DIS_STXP_BIT 18
 #define HIRQ_POL_BIT 9
+#define RXWTOE_BIT 28
 #define RXAUTR_BIT 29
 #define PHR_MODE_SUB 16
 #define LEN_PHR_MODE_SUB 2
@@ -149,6 +152,10 @@
 // timing register (for delayed RX/TX)
 #define DX_TIME 0x0A
 #define LEN_DX_TIME LEN_STAMP
+
+//Receive Frame Wait Timeout Period 1us
+#define RX_FWTO 0x0C
+#define LEN_RX_FWTO 2
 
 // transmit data buffer
 #define TX_BUFFER 0x09

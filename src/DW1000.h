@@ -183,6 +183,7 @@ public:
 	static void setEUI(byte eui[]);
 
 	/* ##### General device configuration ######################################## */
+	
 	/**
 	Specifies whether the DW1000 chip should, again, turn on its receiver in case that the
 	last reception failed.
@@ -194,6 +195,14 @@ public:
 	*/
 	static void setReceiverAutoReenable(boolean val);
 
+	/**
+	Receive Wait Timeout Enable. 
+	When set RX Enable will initialise an RX_FWTO down count
+	which will disable the receiver if no valid frame is received before the timeout occurs.
+
+	@param[in] val `true` to enable, `false` to disable Receive Wait Timeout.
+	*/
+	static void setReceiveWaitTimeoutEnable(boolean val);
 	/**
 	Specifies the interrupt polarity of the DW1000 chip.
 
@@ -259,6 +268,16 @@ public:
 	static void useSmartPower(boolean smartPower);
 
 	/* transmit and receive configuration. */
+
+	/*
+	The Receive Frame Wait Timeout period is a 16-bit field.
+	The units for this parameter areroughly 1μs, (the exact unit is 512 counts of the fundamental 499.2 MHz UWB clock, or
+	1.026 μs). When employing the frame wait timeout, RXFWTO should be set to a value
+	greater than the expected RX frame duration and include an allowance for any uncertainly
+	attaching to the expected transmission start time of the awaited frame.
+	*/
+	static void 		setReceiveFrameWaitTimeout(uint16_t val);
+	static void 		getReceiveFrameWaitTimeout();
 	static DW1000Time   setDelay(const DW1000Time& delay);
 	static DW1000Time   setDelayFromRx(const DW1000Time& delay);
 	static void         receivePermanently(boolean val);
@@ -487,7 +506,7 @@ public:
 	static byte _networkAndAddress[LEN_PANADR];
 	static byte _network[LEN_PAN_ID];
 	static byte _address[LEN_SHORT_ADDR];
-	
+
 	/* internal helper that guide tuning the chip. */
 	static boolean    _smartPower;
 	static byte       _extendedFrameLength;
@@ -529,6 +548,8 @@ public:
 	static void setFrameFilterAllowMAC(boolean val);
 	//Reserved is used for the Blink message
 	static void setFrameFilterAllowReserved(boolean val);
+	static void setFrameFilterAllowType4(boolean val);
+	static void setFrameFilterAllowType5(boolean val);
 
 	// note: not sure if going to be implemented for now
 	static void setDoubleBuffering(boolean val);
