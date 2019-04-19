@@ -34,8 +34,16 @@ DW1000Device_UD::DW1000Device_UD(byte network[])
 
 DW1000Device_UD::DW1000Device_UD(uint16_t network)
 {
-	_shortAddress[0] = 0xFF;
-	_shortAddress[1] = 0xFF;
+	_shortAddress[0] = 0x00;
+	_shortAddress[1] = 0x00;
+	byte _network[2];
+	DW1000.writeValueToBytes(_network, network, 2);
+	setNetwork(_network);
+}
+
+DW1000Device_UD::DW1000Device_UD(uint16_t network, byte shortAddress[])
+{
+	setShortAddress(shortAddress);
 	byte _network[2];
 	DW1000.writeValueToBytes(_network, network, 2);
 	setNetwork(_network);

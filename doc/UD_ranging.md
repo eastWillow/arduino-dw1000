@@ -50,7 +50,7 @@ state PairMode{
     Add_Anchor --[#blue]> [*]  : Added 2 Anchor
 }
 PairMode --[#blue]> IdleMode : Done
-IdleMode --[#red]>  RangeMode : Normal Mode
+IdleMode --[#red]>  RangeMode : RangeMode
 state RangeMode{
     [*] --[#red]> Send_POLL
     Send_POLL --[#red]> Send_RANGE : Got **POLL_ACK**

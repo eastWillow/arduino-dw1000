@@ -38,6 +38,7 @@ public:
 	//Constructor and destructor
 	DW1000Device_UD(byte network[]);
 	DW1000Device_UD(uint16_t network);
+	DW1000Device_UD(uint16_t network, byte shortAddress[]);
 	DW1000Device_UD(byte deviceAddress[], byte shortAddress[], byte network[]);
 	~DW1000Device_UD();
 	
