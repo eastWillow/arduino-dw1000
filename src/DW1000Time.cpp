@@ -33,7 +33,7 @@ DW1000Time::DW1000Time() {
  * Initiates DW1000Time with timestamp
  * @param time timestamp with intervall 1 is approx. 15ps
  */
-DW1000Time::DW1000Time(int64_t time) {
+DW1000Time::DW1000Time(uint64_t time) {
 	setTimestamp(time);
 }
 
@@ -58,7 +58,7 @@ DW1000Time::DW1000Time(const DW1000Time& copy) {
  * @param timeUs time in micro seconds
  * @todo maybe replace by better function without float
  */
-DW1000Time::DW1000Time(float timeUs) {
+DW1000Time::DW1000Time(double timeUs) {
 	setTime(timeUs);
 }
 
@@ -68,7 +68,7 @@ DW1000Time::DW1000Time(float timeUs) {
  * @param factorUs multiply factor for time
  * @todo maybe replace by better function without float
  */
-DW1000Time::DW1000Time(int32_t value, float factorUs) {
+DW1000Time::DW1000Time(uint64_t value, double factorUs) {
 	setTime(value, factorUs);
 }
 
@@ -81,7 +81,7 @@ DW1000Time::~DW1000Time() {}
  * Set timestamp
  * @param value - timestamp with intervall 1 is approx. 15ps
  */
-void DW1000Time::setTimestamp(int64_t value) {
+void DW1000Time::setTimestamp(uint64_t value) {
 	_timestamp = value;
 }
 
@@ -92,7 +92,7 @@ void DW1000Time::setTimestamp(int64_t value) {
 void DW1000Time::setTimestamp(byte data[]) {
 	_timestamp = 0;
 	for(uint8_t i = 0; i < LENGTH_TIMESTAMP; i++) {
-		_timestamp |= ((int64_t)data[i] << (i*8));
+		_timestamp |= ((uint64_t)data[i] << (i*8));
 	}
 }
 
@@ -109,8 +109,8 @@ void DW1000Time::setTimestamp(const DW1000Time& copy) {
  * @param timeUs time in micro seconds
  * @todo maybe replace by better function without float
  */
-void DW1000Time::setTime(float timeUs) {
-	_timestamp = (int32_t)(timeUs*TIME_RES_INV);
+void DW1000Time::setTime(double timeUs) {
+	_timestamp = (uint64_t)(timeUs*TIME_RES_INV);
 //	_timestamp %= TIME_OVERFLOW; // clean overflow
 }
 
@@ -120,18 +120,18 @@ void DW1000Time::setTime(float timeUs) {
  * @param factorUs multiply factor for time
  * @todo maybe replace by better function without float
  */
-void DW1000Time::setTime(int32_t value, float factorUs) {
+void DW1000Time::setTime(uint64_t value, double factorUs) {
 	//float tsValue = value*factorUs;
 	//tsValue = fmod(tsValue, TIME_OVERFLOW);
 	//setTime(tsValue);
-	setTime((float)value*factorUs);
+	setTime((double)value*factorUs);
 }
 
 /**
  * Get timestamp as integer
  * @return timestamp as integer
  */
-int64_t DW1000Time::getTimestamp() const {
+uint64_t DW1000Time::getTimestamp() const {
 	return _timestamp;
 }
 
@@ -153,7 +153,7 @@ void DW1000Time::getTimestamp(byte data[]) const {
  * @return time in micro seconds
  * @deprecated use getAsMicroSeconds()
  */
-float DW1000Time::getAsFloat() const {
+double DW1000Time::getAsFloat() const {
 	//return fmod((float)_timestamp, TIME_OVERFLOW)*TIME_RES;
 	return getAsMicroSeconds();
 }
@@ -162,11 +162,11 @@ float DW1000Time::getAsFloat() const {
  * Return real time in micro seconds
  * @return time in micro seconds
  */
- float DW1000Time::getAsMicroSeconds() const {
+ double DW1000Time::getAsMicroSeconds() const {
  	return (_timestamp%TIME_OVERFLOW)*TIME_RES;
  }
 
- float DW1000Time::getAsNanoSeconds() const {
+ double DW1000Time::getAsNanoSeconds() const {
  	return (_timestamp%TIME_OVERFLOW)*TIME_RES / NANOSECONDS;
  }
 
@@ -175,7 +175,7 @@ float DW1000Time::getAsFloat() const {
  * this is useful for e.g. time of flight
  * @return distance in meters
  */
-float DW1000Time::getAsMeters() const {
+double DW1000Time::getAsMeters() const {
 	//return fmod((float)_timestamp, TIME_OVERFLOW)*DISTANCE_OF_RADIO;
 	return (_timestamp%TIME_OVERFLOW)*DISTANCE_OF_RADIO;
 }
@@ -301,7 +301,7 @@ void DW1000Time::print() {
  * @return size of printed chars
  */
 size_t DW1000Time::printTo(Print& p) const {
-	int64_t       number  = _timestamp;
+	uint64_t       number  = _timestamp;
 	unsigned char buf[21];
 	uint8_t       i       = 0;
 	uint8_t       printed = 0;
@@ -316,7 +316,7 @@ size_t DW1000Time::printTo(Print& p) const {
 		printed++;
 	}
 	while(number > 0) {
-		int64_t q = number/10;
+		uint64_t q = number/10;
 		buf[i++] = number-q*10;
 		number = q;
 	}
