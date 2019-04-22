@@ -291,6 +291,19 @@ if(_receivedAck == true) then(yes)
                         }
                         :_expectedMsgId = RANGE;
                         :transmitPollAck(myDistantDevice);
+                        partition transmitPollAck(myDistantDevice){
+                            :transmitInit();
+                            :_globalMac.generateShortMACFrame(data, _currentShortAddress, myDistantDevice->getByteShortAddress());
+                            :data[SHORT_MAC_LEN] = POLL_ACK;
+                            :DW1000Time deltaTime = DW1000Time(_replyDelayTimeUS, DW1000Time::MICROSECONDS);
+                            :copyShortAddress(_lastSentToShortAddress, myDistantDevice->getByteShortAddress());
+                            :transmit(data, deltaTime);
+                            partition transmit(data,deltaTime){
+                                :DW1000.setDelay(time);
+                                :DW1000.setData(data, LEN_DATA);
+                                :DW1000.startTransmit();
+                            }
+                        }
                         :noteActivity();
                         partition noteActivity(){
                             :_lastActivity = millis();
@@ -318,6 +331,13 @@ if(_receivedAck == true) then(yes)
                             :myDistantDevice->timePollAckReceived.setTimestamp(data+SHORT_MAC_LEN+9+17*i);
                             :myDistantDevice->timeRangeSent.setTimestamp(data+SHORT_MAC_LEN+14+17*i);
                             :computeRangeAsymmetric(myDistantDevice, &myTOF);
+                            partition computeRangeAsymmetric(myDistantDevice,&myTOF){
+                                    :DW1000Time round1 = (myDistantDevice->timePollAckReceived - myDistantDevice->timePollSent).wrap();
+                                    :DW1000Time reply1 = (myDistantDevice->timePollAckSent - myDistantDevice->timePollReceived).wrap();
+                                    :DW1000Time round2 = (myDistantDevice->timeRangeReceived - myDistantDevice->timePollAckSent).wrap();
+                                    :DW1000Time reply2 = (myDistantDevice->timeRangeSent - myDistantDevice->timePollAckReceived).wrap();
+                                    :myTOF->setTimestamp((round1 * round2 - reply1 * reply2) / (round1 + round2 + reply1 + reply2));
+                            }
                             :float distance = myTOF.getAsMeters();
                             if (_useRangeFilter)
                                 if (myDistantDevice->getRange() != 0.0f)

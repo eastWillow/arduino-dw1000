@@ -1687,11 +1687,11 @@ DW1000Time DW1000Class::setDelay(const DW1000Time &delay)
         return DW1000Time();
     }
     byte delayBytes[5];
-    DW1000Time futureTime;
+    static DW1000Time futureTime;
     getSystemTimestamp(futureTime);
     futureTime += delay;
     futureTime.getTimestamp(delayBytes);
-    delayBytes[0] = 0;
+    delayBytes[0] = 0; // User Manual Page74
     delayBytes[1] &= 0xFE;
     writeBytes(DX_TIME, NO_SUB, delayBytes, LEN_DX_TIME);
     // adjust expected time with configured antenna delay

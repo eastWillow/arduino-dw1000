@@ -4,7 +4,6 @@ normal mode
 @startuml
 autonumber
 activate Anchor1
-Anchor1 -[#0000FF]->TAG : Rang init
 TAG -[#red]> Anchor1 : Poll
 Anchor1 -[#0000FF]->TAG : Poll Ack
 TAG -[#red]> Anchor1 : Range
@@ -12,7 +11,6 @@ deactivate Anchor1
 Anchor1 -[#005500]->Anchor1 : Sleep
 autonumber 1
 activate Anchor2
-Anchor2 -[#0000FF]->TAG : Rang init
 TAG -[#red]> Anchor2 : Poll
 Anchor2 -[#0000FF]->TAG : Poll Ack
 TAG -[#red]> Anchor2 : Range
@@ -53,6 +51,8 @@ PairMode --[#blue]> IdleMode : Done
 IdleMode --[#red]>  RangeMode : RangeMode
 state RangeMode{
     [*] --[#red]> Send_POLL
+    Send_POLL --[#red]> Send_POLL : NOT Got **POLL_ACK**
+    Send_POLL --[#red]> [*] : Timeout
     Send_POLL --[#red]> Send_RANGE : Got **POLL_ACK**
     Send_RANGE --[#red]> [*]  : Sended
 }

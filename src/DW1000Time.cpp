@@ -110,7 +110,7 @@ void DW1000Time::setTimestamp(const DW1000Time& copy) {
  * @todo maybe replace by better function without float
  */
 void DW1000Time::setTime(float timeUs) {
-	_timestamp = (int64_t)(timeUs*TIME_RES_INV);
+	_timestamp = (int32_t)(timeUs*TIME_RES_INV);
 //	_timestamp %= TIME_OVERFLOW; // clean overflow
 }
 
@@ -124,7 +124,7 @@ void DW1000Time::setTime(int32_t value, float factorUs) {
 	//float tsValue = value*factorUs;
 	//tsValue = fmod(tsValue, TIME_OVERFLOW);
 	//setTime(tsValue);
-	setTime(value*factorUs);
+	setTime((float)value*factorUs);
 }
 
 /**
@@ -140,10 +140,12 @@ int64_t DW1000Time::getTimestamp() const {
  * @param data var where data should be written
  */
 void DW1000Time::getTimestamp(byte data[]) const {
-	memset(data, 0, LENGTH_TIMESTAMP);
+	static byte _data[LENGTH_TIMESTAMP];
+	memset(_data, 0, LENGTH_TIMESTAMP);
 	for(uint8_t i = 0; i < LENGTH_TIMESTAMP; i++) {
-		data[i] = (byte)((_timestamp >> (i*8)) & 0xFF);
+		_data[i] = (byte)((_timestamp >> (i*8)) & 0xFF);
 	}
+	memcpy(data,_data , LENGTH_TIMESTAMP);
 }
 
 /**
