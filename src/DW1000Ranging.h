@@ -51,16 +51,16 @@
 
 //Default value
 //in ms
-#define DEFAULT_RESET_PERIOD 200
+#define DEFAULT_RESET_PERIOD 250
 //in us
-#define DEFAULT_REPLY_DELAY_TIME 10000
+#define DEFAULT_REPLY_DELAY_TIME 8000
 
 //sketch type (anchor or tag)
 #define TAG 0
 #define ANCHOR 1
 
 //default timer delay
-#define DEFAULT_TIMER_DELAY 80
+#define DEFAULT_TIMER_DELAY 100
 
 //debug mode
 #ifndef DEBUG
