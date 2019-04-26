@@ -1004,7 +1004,7 @@ void DW1000RangingClass::loopwoReport()
 							}
 							else
 							{
-								//transmitRangeFailed(myDistantDevice);
+								transmitRangeFailed(myDistantDevice);
 							}
 
 							return;
